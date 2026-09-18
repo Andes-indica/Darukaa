@@ -44,11 +44,13 @@ function draftCollection(
   points: Position[],
   boundary: PolygonGeometry | null,
 ): FeatureCollection<Geometry> {
-  const features: Array<Feature<Geometry>> = points.map((coordinates) => ({
-    type: "Feature",
-    properties: { kind: "vertex" },
-    geometry: { type: "Point", coordinates } satisfies Point,
-  }));
+  const features: Array<Feature<Geometry>> = points.map(
+    (coordinates, index) => ({
+      type: "Feature",
+      properties: { kind: "vertex", number: index + 1 },
+      geometry: { type: "Point", coordinates } satisfies Point,
+    }),
+  );
 
   if (boundary) {
     features.unshift({
@@ -124,7 +126,7 @@ export function SiteMap({
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [78.9629, 20.5937],
       zoom: 4,
     });
@@ -164,7 +166,29 @@ export function SiteMap({
         type: "line",
         source: DRAFT_SOURCE_ID,
         filter: ["in", ["geometry-type"], ["literal", ["LineString", "Polygon"]]],
-        paint: { "line-color": "#f5a524", "line-width": 3 },
+        paint: { "line-color": "#ffffff", "line-width": 7 },
+      });
+      map.addLayer({
+        id: `${DRAFT_SOURCE_ID}-line-accent`,
+        type: "line",
+        source: DRAFT_SOURCE_ID,
+        filter: [
+          "in",
+          ["geometry-type"],
+          ["literal", ["LineString", "Polygon"]],
+        ],
+        paint: { "line-color": "#ff9f1c", "line-width": 4 },
+      });
+      map.addLayer({
+        id: `${DRAFT_SOURCE_ID}-vertex-halo`,
+        type: "circle",
+        source: DRAFT_SOURCE_ID,
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "circle-color": "#ffffff",
+          "circle-radius": 10,
+          "circle-opacity": 0.95,
+        },
       });
       map.addLayer({
         id: `${DRAFT_SOURCE_ID}-vertices`,
@@ -172,11 +196,24 @@ export function SiteMap({
         source: DRAFT_SOURCE_ID,
         filter: ["==", ["geometry-type"], "Point"],
         paint: {
-          "circle-color": "#fff7e8",
-          "circle-radius": 5,
-          "circle-stroke-color": "#a85d00",
-          "circle-stroke-width": 2,
+          "circle-color": "#ff9f1c",
+          "circle-radius": 7,
+          "circle-stroke-color": "#5b2c00",
+          "circle-stroke-width": 1.5,
         },
+      });
+      map.addLayer({
+        id: `${DRAFT_SOURCE_ID}-vertex-labels`,
+        type: "symbol",
+        source: DRAFT_SOURCE_ID,
+        filter: ["==", ["geometry-type"], "Point"],
+        layout: {
+          "text-field": ["to-string", ["get", "number"]],
+          "text-size": 10,
+          "text-font": ["DIN Offc Pro Bold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": "#241100" },
       });
 
       updateSiteLayer(map, sitesRef.current);
@@ -239,6 +276,14 @@ export function SiteMap({
     map.getCanvas().style.cursor = "";
   }
 
+  function undoLastPoint() {
+    const map = mapRef.current;
+    if (!map || !drawingRef.current || pointsRef.current.length === 0) return;
+    pointsRef.current = pointsRef.current.slice(0, -1);
+    setPointCount(pointsRef.current.length);
+    setDraftData(map, pointsRef.current, null);
+  }
+
   function clearDrawing() {
     const map = mapRef.current;
     if (!map) return;
@@ -273,15 +318,33 @@ export function SiteMap({
           onClick={addDrawingPoint}
         />
       )}
-      <div className="site-map-tools" aria-label="Polygon drawing tools">
+      <div
+        className={`site-map-tools ${isDrawing ? "is-drawing" : ""}`}
+        aria-label="Polygon drawing tools"
+      >
         <button
+          className="map-tool-start"
           type="button"
           onClick={startDrawing}
           disabled={!mapReady || isDrawing}
+          aria-pressed={isDrawing}
         >
           {isDrawing ? "Drawing…" : "Draw polygon"}
         </button>
+        {isDrawing && (
+          <span className="site-map-point-count">
+            {pointCount} {pointCount === 1 ? "point" : "points"}
+          </span>
+        )}
         <button
+          type="button"
+          onClick={undoLastPoint}
+          disabled={!isDrawing || pointCount === 0}
+        >
+          Undo
+        </button>
+        <button
+          className="map-tool-finish"
           type="button"
           onClick={finishDrawing}
           disabled={!isDrawing || pointCount < 3}
@@ -294,9 +357,18 @@ export function SiteMap({
       </div>
       {isDrawing && (
         <div className="site-map-hint" role="status">
-          {pointCount < 3
-            ? `Click ${3 - pointCount} more point${3 - pointCount === 1 ? "" : "s"} on the map`
-            : "Add more points or click Finish polygon"}
+          <strong>
+            {pointCount === 0
+              ? "Place the first point"
+              : pointCount < 3
+                ? `Add ${3 - pointCount} more point${3 - pointCount === 1 ? "" : "s"}`
+                : "Polygon ready"}
+          </strong>
+          <span>
+            {pointCount < 3
+              ? "Click directly on the map"
+              : "Add more points or click Finish polygon"}
+          </span>
         </div>
       )}
     </>
