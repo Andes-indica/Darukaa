@@ -4,6 +4,9 @@ import type {
   ProjectFilters,
   ProjectInput,
   ProjectListResponse,
+  Site,
+  SiteInput,
+  SiteListResponse,
   User,
 } from "../types";
 
@@ -118,4 +121,56 @@ export function updateProject(
 
 export function deleteProject(token: string, projectId: string): Promise<void> {
   return request<void>(`/projects/${projectId}`, { method: "DELETE" }, token);
+}
+
+export function listSites(
+  token: string,
+  projectId: string,
+): Promise<SiteListResponse> {
+  return request<SiteListResponse>(`/projects/${projectId}/sites`, {}, token);
+}
+
+export function createSite(
+  token: string,
+  projectId: string,
+  site: SiteInput,
+): Promise<Site> {
+  return request<Site>(
+    `/projects/${projectId}/sites`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(site),
+    },
+    token,
+  );
+}
+
+export function updateSite(
+  token: string,
+  projectId: string,
+  siteId: string,
+  site: Partial<SiteInput>,
+): Promise<Site> {
+  return request<Site>(
+    `/projects/${projectId}/sites/${siteId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(site),
+    },
+    token,
+  );
+}
+
+export function deleteSite(
+  token: string,
+  projectId: string,
+  siteId: string,
+): Promise<void> {
+  return request<void>(
+    `/projects/${projectId}/sites/${siteId}`,
+    { method: "DELETE" },
+    token,
+  );
 }

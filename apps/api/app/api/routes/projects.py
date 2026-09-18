@@ -5,11 +5,20 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import func, or_, select
 
 from app.api.dependencies import CurrentUser, SessionDependency
-from app.models import Project
+from app.models import Project, Site
 from app.models.enums import ProjectStatus, ProjectType
 from app.schemas.project import ProjectCreate, ProjectListResponse, ProjectPublic, ProjectUpdate
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+def serialize_project(project: Project, site_count: int = 0) -> ProjectPublic:
+    return ProjectPublic.model_validate(project).model_copy(update={"site_count": site_count})
+
+
+async def get_site_count(project_id: UUID, session: SessionDependency) -> int:
+    count = await session.scalar(select(func.count(Site.id)).where(Site.project_id == project_id))
+    return count or 0
 
 
 async def get_owned_project(
@@ -30,12 +39,12 @@ async def create_project(
     payload: ProjectCreate,
     session: SessionDependency,
     current_user: CurrentUser,
-) -> Project:
+) -> ProjectPublic:
     project = Project(owner_id=current_user.id, **payload.model_dump())
     session.add(project)
     await session.commit()
     await session.refresh(project)
-    return project
+    return serialize_project(project)
 
 
 @router.get("", response_model=ProjectListResponse)
@@ -58,14 +67,20 @@ async def list_projects(
         filters.append(or_(Project.name.ilike(term), Project.description.ilike(term)))
 
     total = await session.scalar(select(func.count(Project.id)).where(*filters))
-    result = await session.scalars(
-        select(Project)
+    site_count = (
+        select(func.count(Site.id))
+        .where(Site.project_id == Project.id)
+        .correlate(Project)
+        .scalar_subquery()
+    )
+    result = await session.execute(
+        select(Project, site_count.label("site_count"))
         .where(*filters)
         .order_by(Project.updated_at.desc(), Project.id)
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    projects = [ProjectPublic.model_validate(project) for project in result.all()]
+    projects = [serialize_project(project, count) for project, count in result.all()]
     return ProjectListResponse.build(projects, total or 0, page, page_size)
 
 
@@ -74,8 +89,9 @@ async def read_project(
     project_id: UUID,
     session: SessionDependency,
     current_user: CurrentUser,
-) -> Project:
-    return await get_owned_project(project_id, current_user.id, session)
+) -> ProjectPublic:
+    project = await get_owned_project(project_id, current_user.id, session)
+    return serialize_project(project, await get_site_count(project.id, session))
 
 
 @router.patch("/{project_id}", response_model=ProjectPublic)
@@ -84,7 +100,7 @@ async def update_project(
     payload: ProjectUpdate,
     session: SessionDependency,
     current_user: CurrentUser,
-) -> Project:
+) -> ProjectPublic:
     project = await get_owned_project(project_id, current_user.id, session)
     updates = payload.model_dump(exclude_unset=True)
     for field, value in updates.items():
@@ -98,7 +114,7 @@ async def update_project(
 
     await session.commit()
     await session.refresh(project)
-    return project
+    return serialize_project(project, await get_site_count(project.id, session))
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

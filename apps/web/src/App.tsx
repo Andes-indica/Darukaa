@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { AuthScreen } from "./components/AuthScreen";
 import { ProjectDialog } from "./components/ProjectDialog";
@@ -18,6 +25,11 @@ import type {
 } from "./types";
 
 const TOKEN_KEY = "darukaa_access_token";
+const SiteWorkspace = lazy(() =>
+  import("./components/SiteWorkspace").then((module) => ({
+    default: module.SiteWorkspace,
+  })),
+);
 const emptyProjectPage: ProjectListResponse = {
   items: [],
   total: 0,
@@ -48,6 +60,7 @@ function App() {
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [siteProject, setSiteProject] = useState<Project | null>(null);
 
   const loadProjects = useCallback(async () => {
     if (!token) return;
@@ -397,6 +410,14 @@ function App() {
                   </span>
                   <div className="row-actions">
                     <button
+                      className="icon-button map-action"
+                      type="button"
+                      onClick={() => setSiteProject(project)}
+                      aria-label={`Manage sites for ${project.name}`}
+                    >
+                      ⌖
+                    </button>
+                    <button
                       className="icon-button"
                       type="button"
                       onClick={() => openEditDialog(project)}
@@ -449,6 +470,20 @@ function App() {
           onClose={() => setDialogOpen(false)}
           onSaved={handleProjectSaved}
         />
+      )}
+      {siteProject && (
+        <Suspense
+          fallback={
+            <div className="workspace-loading">Loading map workspace…</div>
+          }
+        >
+          <SiteWorkspace
+            token={token}
+            project={siteProject}
+            onClose={() => setSiteProject(null)}
+            onChanged={loadProjects}
+          />
+        </Suspense>
       )}
     </div>
   );
