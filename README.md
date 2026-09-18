@@ -4,7 +4,7 @@ A full-stack geospatial dashboard for creating, mapping, and monitoring carbon a
 
 ## Current milestone
 
-Milestones 1 through 4 establish the application foundation, security model, project management, and geospatial workflow:
+Milestones 1 through 5 establish the application foundation, security model, project management, geospatial workflow, and site performance analytics:
 
 - React + TypeScript frontend with a responsive dashboard shell
 - FastAPI backend with OpenAPI documentation and health endpoints
@@ -24,6 +24,9 @@ Milestones 1 through 4 establish the application foundation, security model, pro
 - Mapbox Draw workspace for creating and editing project boundaries
 - PostGIS geometry storage and equal-area hectare calculation
 - Live site counts on project responses and the dashboard
+- Ownership-protected site observation APIs for carbon, biodiversity, and vegetation
+- Server-calculated latest, average, range, and change-over-time summaries
+- Per-site Chart.js trend workspace with metric entry and an observation audit trail
 
 ## Architecture
 
@@ -98,23 +101,27 @@ Husky runs lint-staged before each commit, applying Prettier and ESLint to front
 
 ## API endpoints available now
 
-| Method | Endpoint                                | Purpose                               |
-| ------ | --------------------------------------- | ------------------------------------- |
-| GET    | `/api/v1/health`                        | API liveness check                    |
-| GET    | `/api/v1/health/database`               | PostGIS connectivity check            |
-| POST   | `/api/v1/auth/register`                 | Create an account and receive a JWT   |
-| POST   | `/api/v1/auth/login`                    | Authenticate using OAuth2 form data   |
-| GET    | `/api/v1/auth/me`                       | Return the authenticated user         |
-| POST   | `/api/v1/projects`                      | Create an owned project               |
-| GET    | `/api/v1/projects`                      | Search, filter, and paginate projects |
-| GET    | `/api/v1/projects/{id}`                 | Read an owned project                 |
-| PATCH  | `/api/v1/projects/{id}`                 | Update an owned project               |
-| DELETE | `/api/v1/projects/{id}`                 | Delete an owned project               |
-| POST   | `/api/v1/projects/{id}/sites`           | Create a polygon site                 |
-| GET    | `/api/v1/projects/{id}/sites`           | List the project's sites              |
-| GET    | `/api/v1/projects/{id}/sites/{site_id}` | Read a site                           |
-| PATCH  | `/api/v1/projects/{id}/sites/{site_id}` | Update site data or polygon           |
-| DELETE | `/api/v1/projects/{id}/sites/{site_id}` | Delete a site                         |
+| Method | Endpoint                                                    | Purpose                               |
+| ------ | ----------------------------------------------------------- | ------------------------------------- |
+| GET    | `/api/v1/health`                                            | API liveness check                    |
+| GET    | `/api/v1/health/database`                                   | PostGIS connectivity check            |
+| POST   | `/api/v1/auth/register`                                     | Create an account and receive a JWT   |
+| POST   | `/api/v1/auth/login`                                        | Authenticate using OAuth2 form data   |
+| GET    | `/api/v1/auth/me`                                           | Return the authenticated user         |
+| POST   | `/api/v1/projects`                                          | Create an owned project               |
+| GET    | `/api/v1/projects`                                          | Search, filter, and paginate projects |
+| GET    | `/api/v1/projects/{id}`                                     | Read an owned project                 |
+| PATCH  | `/api/v1/projects/{id}`                                     | Update an owned project               |
+| DELETE | `/api/v1/projects/{id}`                                     | Delete an owned project               |
+| POST   | `/api/v1/projects/{id}/sites`                               | Create a polygon site                 |
+| GET    | `/api/v1/projects/{id}/sites`                               | List the project's sites              |
+| GET    | `/api/v1/projects/{id}/sites/{site_id}`                     | Read a site                           |
+| PATCH  | `/api/v1/projects/{id}/sites/{site_id}`                     | Update site data or polygon           |
+| DELETE | `/api/v1/projects/{id}/sites/{site_id}`                     | Delete a site                         |
+| POST   | `/api/v1/projects/{id}/sites/{site_id}/metrics`             | Add a site observation                |
+| GET    | `/api/v1/projects/{id}/sites/{site_id}/metrics`             | List/filter observations              |
+| GET    | `/api/v1/projects/{id}/sites/{site_id}/metrics/analytics`   | Get trend summaries                   |
+| DELETE | `/api/v1/projects/{id}/sites/{site_id}/metrics/{metric_id}` | Delete an observation                 |
 
 ## Database schema
 
@@ -130,6 +137,8 @@ All primary keys are UUIDs. Deleting a user removes owned projects; deleting a p
 Project queries are scoped to the authenticated owner. Requests for another user's project return `404` so the API does not reveal whether that resource exists.
 
 Site polygons arrive as GeoJSON in WGS84 (`EPSG:4326`). The API validates ring closure, coordinate bounds, non-zero area, and polygon topology before storing the geometry. PostGIS transforms each polygon to the World Equidistant Cylindrical equal-area CRS (`EPSG:6933`) and calculates hectares using `ST_Area(...) / 10000`.
+
+Site analytics use three canonical measurement series: stored carbon (`tCO₂e`), a project-defined biodiversity index (`index`), and vegetation cover (`%`). The API assigns these units, rejects negative values and timestamps without a timezone, and prevents duplicate metric/timestamp observations for a site. Summary values are calculated from the stored observations rather than trusted from the browser.
 
 For this hackathon MVP, the browser keeps the short-lived access token in local storage. A production deployment should move refresh tokens into Secure, HttpOnly, SameSite cookies and apply a restrictive Content Security Policy.
 
@@ -151,5 +160,5 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 2. Database schema and JWT registration/login (complete)
 3. Project management dashboard and CRUD (complete)
 4. Mapbox polygon drawing and PostGIS storage (complete)
-5. Site analytics with Chart.js
+5. Site analytics with Chart.js (complete)
 6. Full test suite, deployment workflows, documentation, and submission document

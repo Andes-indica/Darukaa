@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, health, projects, sites
+from app.api.routes import auth, health, metrics, projects, sites
 from app.core.config import settings
 
 app = FastAPI(
@@ -23,6 +23,7 @@ app.include_router(health.router, prefix=settings.api_v1_prefix)
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(projects.router, prefix=settings.api_v1_prefix)
 app.include_router(sites.router, prefix=settings.api_v1_prefix)
+app.include_router(metrics.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/", include_in_schema=False)

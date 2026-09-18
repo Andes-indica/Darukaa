@@ -4,9 +4,14 @@ import type {
   ProjectFilters,
   ProjectInput,
   ProjectListResponse,
+  SiteAnalyticsResponse,
   Site,
   SiteInput,
   SiteListResponse,
+  SiteMetric,
+  SiteMetricInput,
+  SiteMetricListResponse,
+  MetricType,
   User,
 } from "../types";
 
@@ -170,6 +175,64 @@ export function deleteSite(
 ): Promise<void> {
   return request<void>(
     `/projects/${projectId}/sites/${siteId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+export function listSiteMetrics(
+  token: string,
+  projectId: string,
+  siteId: string,
+  metricType?: MetricType,
+): Promise<SiteMetricListResponse> {
+  const params = metricType
+    ? `?${new URLSearchParams({ metric_type: metricType }).toString()}`
+    : "";
+  return request<SiteMetricListResponse>(
+    `/projects/${projectId}/sites/${siteId}/metrics${params}`,
+    {},
+    token,
+  );
+}
+
+export function createSiteMetric(
+  token: string,
+  projectId: string,
+  siteId: string,
+  metric: SiteMetricInput,
+): Promise<SiteMetric> {
+  return request<SiteMetric>(
+    `/projects/${projectId}/sites/${siteId}/metrics`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(metric),
+    },
+    token,
+  );
+}
+
+export function getSiteAnalytics(
+  token: string,
+  projectId: string,
+  siteId: string,
+): Promise<SiteAnalyticsResponse> {
+  return request<SiteAnalyticsResponse>(
+    `/projects/${projectId}/sites/${siteId}/metrics/analytics`,
+    {},
+    token,
+  );
+}
+
+export function deleteSiteMetric(
+  token: string,
+  projectId: string,
+  siteId: string,
+  metricId: string,
+): Promise<void> {
+  return request<void>(
+    `/projects/${projectId}/sites/${siteId}/metrics/${metricId}`,
     { method: "DELETE" },
     token,
   );

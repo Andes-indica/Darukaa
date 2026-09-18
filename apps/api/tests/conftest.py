@@ -24,7 +24,25 @@ async def db_session() -> AsyncIterator[AsyncSession]:
             text(
                 "CREATE TABLE sites ("
                 "id CHAR(32) PRIMARY KEY, "
-                "project_id CHAR(32) NOT NULL REFERENCES projects(id) ON DELETE CASCADE"
+                "project_id CHAR(32) NOT NULL REFERENCES projects(id) ON DELETE CASCADE, "
+                "name VARCHAR(160) NOT NULL"
+                ")"
+            )
+        )
+        await connection.execute(
+            text(
+                "CREATE TABLE site_metrics ("
+                "id CHAR(32) PRIMARY KEY, "
+                "site_id CHAR(32) NOT NULL REFERENCES sites(id) ON DELETE CASCADE, "
+                "metric_type VARCHAR(40) NOT NULL, "
+                "value NUMERIC(18, 6) NOT NULL, "
+                "unit VARCHAR(40) NOT NULL, "
+                "observed_at DATETIME NOT NULL, "
+                "source VARCHAR(160), "
+                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, "
+                "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, "
+                "CONSTRAINT uq_site_metric_observation "
+                "UNIQUE (site_id, metric_type, observed_at)"
                 ")"
             )
         )

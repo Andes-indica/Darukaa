@@ -1,4 +1,11 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   ApiError,
@@ -9,6 +16,12 @@ import {
 } from "../lib/api";
 import type { PolygonGeometry, Project, Site, SiteStatus } from "../types";
 import { SiteMap } from "./SiteMap";
+
+const SiteAnalytics = lazy(() =>
+  import("./SiteAnalytics").then((module) => ({
+    default: module.SiteAnalytics,
+  })),
+);
 
 interface SiteWorkspaceProps {
   token: string;
@@ -25,6 +38,7 @@ export function SiteWorkspace({
 }: SiteWorkspaceProps) {
   const [sites, setSites] = useState<Site[]>([]);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
+  const [analyticsSite, setAnalyticsSite] = useState<Site | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [siteStatus, setSiteStatus] = useState<SiteStatus>("planned");
@@ -104,6 +118,7 @@ export function SiteWorkspace({
     try {
       await deleteSite(token, project.id, site.id);
       if (editingSite?.id === site.id) resetForm();
+      if (analyticsSite?.id === site.id) setAnalyticsSite(null);
       await loadSites();
       onChanged();
     } catch (caught) {
@@ -236,6 +251,12 @@ export function SiteWorkspace({
                       </span>
                     </div>
                     <div>
+                      <button
+                        type="button"
+                        onClick={() => setAnalyticsSite(site)}
+                      >
+                        Analytics
+                      </button>
                       <button type="button" onClick={() => editSite(site)}>
                         Edit
                       </button>
@@ -253,6 +274,22 @@ export function SiteWorkspace({
             </div>
           </aside>
         </div>
+        {analyticsSite && (
+          <Suspense
+            fallback={
+              <div className="analytics-layer analytics-loading">
+                Loading analytics…
+              </div>
+            }
+          >
+            <SiteAnalytics
+              token={token}
+              projectId={project.id}
+              site={analyticsSite}
+              onClose={() => setAnalyticsSite(null)}
+            />
+          </Suspense>
+        )}
       </section>
     </div>
   );
