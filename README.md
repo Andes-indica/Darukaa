@@ -4,7 +4,7 @@ A full-stack geospatial dashboard for creating, mapping, and monitoring carbon a
 
 ## Current milestone
 
-Milestones 1 and 2 establish the application foundation and security model:
+Milestones 1 through 3 establish the application foundation, security model, and project management workflow:
 
 - React + TypeScript frontend with a responsive dashboard shell
 - FastAPI backend with OpenAPI documentation and health endpoints
@@ -16,6 +16,9 @@ Milestones 1 and 2 establish the application foundation and security model:
 - Alembic migration with UUID keys, enum constraints, cascading relationships, and a PostGIS polygon index
 - Argon2 password hashing and short-lived JWT access tokens
 - Registration, login, and protected profile endpoints
+- Ownership-scoped project create, read, update, and delete endpoints
+- Search, project type/status filters, and paginated project results
+- Live React authentication flow, session restoration, and project management dashboard
 
 ## Architecture
 
@@ -90,13 +93,18 @@ Husky runs lint-staged before each commit, applying Prettier and ESLint to front
 
 ## API endpoints available now
 
-| Method | Endpoint                  | Purpose                             |
-| ------ | ------------------------- | ----------------------------------- |
-| GET    | `/api/v1/health`          | API liveness check                  |
-| GET    | `/api/v1/health/database` | PostGIS connectivity check          |
-| POST   | `/api/v1/auth/register`   | Create an account and receive a JWT |
-| POST   | `/api/v1/auth/login`      | Authenticate using OAuth2 form data |
-| GET    | `/api/v1/auth/me`         | Return the authenticated user       |
+| Method | Endpoint                  | Purpose                               |
+| ------ | ------------------------- | ------------------------------------- |
+| GET    | `/api/v1/health`          | API liveness check                    |
+| GET    | `/api/v1/health/database` | PostGIS connectivity check            |
+| POST   | `/api/v1/auth/register`   | Create an account and receive a JWT   |
+| POST   | `/api/v1/auth/login`      | Authenticate using OAuth2 form data   |
+| GET    | `/api/v1/auth/me`         | Return the authenticated user         |
+| POST   | `/api/v1/projects`        | Create an owned project               |
+| GET    | `/api/v1/projects`        | Search, filter, and paginate projects |
+| GET    | `/api/v1/projects/{id}`   | Read an owned project                 |
+| PATCH  | `/api/v1/projects/{id}`   | Update an owned project               |
+| DELETE | `/api/v1/projects/{id}`   | Delete an owned project               |
 
 ## Database schema
 
@@ -108,6 +116,10 @@ Husky runs lint-staged before each commit, applying Prettier and ESLint to front
 | `site_metrics` | Time-series measurements for analytics  | metric type, value, unit, observation time |
 
 All primary keys are UUIDs. Deleting a user removes owned projects; deleting a project removes its sites and measurements. Site boundaries use WGS84 (`SRID 4326`) and a GiST spatial index.
+
+Project queries are scoped to the authenticated owner. Requests for another user's project return `404` so the API does not reveal whether that resource exists.
+
+For this hackathon MVP, the browser keeps the short-lived access token in local storage. A production deployment should move refresh tokens into Secure, HttpOnly, SameSite cookies and apply a restrictive Content Security Policy.
 
 ### Authentication example
 
@@ -125,7 +137,7 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 
 1. Foundation and developer experience (complete)
 2. Database schema and JWT registration/login (complete)
-3. Project management dashboard and CRUD
+3. Project management dashboard and CRUD (complete)
 4. Mapbox polygon drawing and PostGIS storage
 5. Site analytics with Chart.js
 6. Full test suite, deployment workflows, documentation, and submission document

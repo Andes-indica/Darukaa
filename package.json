@@ -22,10 +22,8 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "apps/web/**/*.{ts,tsx,js,jsx,json,css,md}": [
-      "prettier --write",
-      "eslint --fix"
-    ],
+    "apps/web/**/*.{ts,tsx,js,jsx,json,css,md}": "prettier --write",
+    "apps/web/**/*.{ts,tsx}": "eslint --fix --config apps/web/eslint.config.js",
     "apps/api/**/*.py": [
       "uv run --project apps/api ruff check --fix",
       "uv run --project apps/api ruff format"

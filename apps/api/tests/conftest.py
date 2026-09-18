@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import get_db_session
 from app.main import app
-from app.models import User
+from app.models import Project, User
 
 
 @pytest_asyncio.fixture
@@ -18,6 +18,7 @@ async def db_session() -> AsyncIterator[AsyncSession]:
     )
     async with engine.begin() as connection:
         await connection.run_sync(User.__table__.create)
+        await connection.run_sync(Project.__table__.create)
 
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
