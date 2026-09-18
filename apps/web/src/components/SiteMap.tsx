@@ -7,7 +7,12 @@ import type {
   Polygon,
 } from "geojson";
 import mapboxgl from "mapbox-gl";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -55,10 +60,7 @@ function draftCollection(
     features.unshift({
       type: "Feature",
       properties: { kind: "line" },
-      geometry: {
-        type: "LineString",
-        coordinates: points,
-      } satisfies LineString,
+      geometry: { type: "LineString", coordinates: points } satisfies LineString,
     });
   }
 
@@ -71,7 +73,8 @@ function setDraftData(
   boundary: PolygonGeometry | null,
 ) {
   const source = map.getSource(DRAFT_SOURCE_ID) as
-    mapboxgl.GeoJSONSource | undefined;
+    | mapboxgl.GeoJSONSource
+    | undefined;
   source?.setData(draftCollection(points, boundary));
 }
 
@@ -160,11 +163,7 @@ export function SiteMap({
         id: `${DRAFT_SOURCE_ID}-line`,
         type: "line",
         source: DRAFT_SOURCE_ID,
-        filter: [
-          "in",
-          ["geometry-type"],
-          ["literal", ["LineString", "Polygon"]],
-        ],
+        filter: ["in", ["geometry-type"], ["literal", ["LineString", "Polygon"]]],
         paint: { "line-color": "#f5a524", "line-width": 3 },
       });
       map.addLayer({
@@ -184,16 +183,6 @@ export function SiteMap({
       setMapReady(true);
     });
 
-    map.on("click", (event) => {
-      if (!drawingRef.current) return;
-      pointsRef.current = [
-        ...pointsRef.current,
-        [event.lngLat.lng, event.lngLat.lat],
-      ];
-      setPointCount(pointsRef.current.length);
-      setDraftData(map, pointsRef.current, null);
-    });
-
     mapRef.current = map;
     return () => {
       map.remove();
@@ -206,6 +195,22 @@ export function SiteMap({
     if (!map?.isStyleLoaded() || drawingRef.current) return;
     setDraftData(map, [], draftBoundary);
   }, [draftBoundary]);
+
+  function addDrawingPoint(event: ReactMouseEvent<HTMLDivElement>) {
+    const map = mapRef.current;
+    if (!map || !drawingRef.current) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const location = map.unproject([
+      event.clientX - bounds.left,
+      event.clientY - bounds.top,
+    ]);
+    pointsRef.current = [
+      ...pointsRef.current,
+      [location.lng, location.lat],
+    ];
+    setPointCount(pointsRef.current.length);
+    setDraftData(map, pointsRef.current, null);
+  }
 
   function startDrawing() {
     const map = mapRef.current;
@@ -260,6 +265,14 @@ export function SiteMap({
   return (
     <>
       <div className="interactive-map" ref={containerRef} />
+      {isDrawing && (
+        <div
+          className="site-map-click-layer"
+          role="application"
+          aria-label="Click the map to add polygon points"
+          onClick={addDrawingPoint}
+        />
+      )}
       <div className="site-map-tools" aria-label="Polygon drawing tools">
         <button
           type="button"
