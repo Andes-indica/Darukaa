@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
@@ -19,6 +20,14 @@ async def db_session() -> AsyncIterator[AsyncSession]:
     async with engine.begin() as connection:
         await connection.run_sync(User.__table__.create)
         await connection.run_sync(Project.__table__.create)
+        await connection.execute(
+            text(
+                "CREATE TABLE sites ("
+                "id CHAR(32) PRIMARY KEY, "
+                "project_id CHAR(32) NOT NULL REFERENCES projects(id) ON DELETE CASCADE"
+                ")"
+            )
+        )
 
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
