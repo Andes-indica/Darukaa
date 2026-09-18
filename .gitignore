@@ -1,0 +1,16 @@
+.env
+.env.local
+.venv/
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+coverage/
+.DS_Store
+.idea/
+.vscode/

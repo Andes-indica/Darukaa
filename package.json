@@ -1,0 +1,47 @@
+{
+  "name": "darukaa-earth",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:web dev:api",
+    "dev:web": "npm --workspace @darukaa/web run dev",
+    "dev:api": "uv run --project apps/api fastapi dev apps/api/app/main.py --host 0.0.0.0 --port 8000",
+    "build": "npm run build:web",
+    "build:web": "npm --workspace @darukaa/web run build",
+    "lint": "npm-run-all lint:web lint:api",
+    "lint:web": "npm --workspace @darukaa/web run lint",
+    "lint:api": "uv run --project apps/api ruff check apps/api",
+    "format": "npm-run-all format:web format:api",
+    "format:web": "prettier --write .",
+    "format:api": "uv run --project apps/api ruff format apps/api",
+    "test": "npm-run-all test:api build:web",
+    "test:api": "uv run --project apps/api pytest -c apps/api/pyproject.toml",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,js,jsx,json,css,md}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "apps/api/**/*.py": [
+      "uv run --project apps/api ruff check --fix",
+      "uv run --project apps/api ruff format"
+    ],
+    "*.{json,md,yml,yaml}": "prettier --write"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "npm-run-all2": "^7.0.2",
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "uv": "^1.4.0"
+  }
+}
