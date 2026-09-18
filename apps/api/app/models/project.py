@@ -50,4 +50,5 @@ class Project(TimestampMixin, Base):
     sites: Mapped[list["Site"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )

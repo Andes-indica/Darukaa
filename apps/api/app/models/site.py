@@ -45,4 +45,5 @@ class Site(TimestampMixin, Base):
     metrics: Mapped[list["SiteMetric"]] = relationship(
         back_populates="site",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
