@@ -4,7 +4,7 @@ A full-stack geospatial dashboard for creating, mapping, and monitoring carbon a
 
 ## Current milestone
 
-Milestone 1 establishes the project foundation:
+Milestones 1 and 2 establish the application foundation and security model:
 
 - React + TypeScript frontend with a responsive dashboard shell
 - FastAPI backend with OpenAPI documentation and health endpoints
@@ -12,6 +12,10 @@ Milestone 1 establishes the project foundation:
 - Shared environment configuration
 - ESLint, Prettier, Ruff, Husky, and lint-staged quality checks
 - API smoke test and GitHub Actions CI
+- SQLAlchemy models for users, projects, sites, and time-series metrics
+- Alembic migration with UUID keys, enum constraints, cascading relationships, and a PostGIS polygon index
+- Argon2 password hashing and short-lived JWT access tokens
+- Registration, login, and protected profile endpoints
 
 ## Architecture
 
@@ -35,7 +39,6 @@ infra/
   postgres/   Local PostGIS initialization
 .github/      CI workflows
 ```
-
 
 ## Local setup
 
@@ -62,7 +65,13 @@ Prerequisites: Node.js 20+, Python 3.12+, [uv](https://docs.astral.sh/uv/), and 
    uv sync --project apps/api --dev
    ```
 
-5. Start both applications:
+5. Apply the database migration:
+
+   ```bash
+   uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
+   ```
+
+6. Start both applications:
 
    ```bash
    npm run dev
@@ -81,15 +90,41 @@ Husky runs lint-staged before each commit, applying Prettier and ESLint to front
 
 ## API endpoints available now
 
-| Method | Endpoint                  | Purpose                    |
-| ------ | ------------------------- | -------------------------- |
-| GET    | `/api/v1/health`          | API liveness check         |
-| GET    | `/api/v1/health/database` | PostGIS connectivity check |
+| Method | Endpoint                  | Purpose                             |
+| ------ | ------------------------- | ----------------------------------- |
+| GET    | `/api/v1/health`          | API liveness check                  |
+| GET    | `/api/v1/health/database` | PostGIS connectivity check          |
+| POST   | `/api/v1/auth/register`   | Create an account and receive a JWT |
+| POST   | `/api/v1/auth/login`      | Authenticate using OAuth2 form data |
+| GET    | `/api/v1/auth/me`         | Return the authenticated user       |
+
+## Database schema
+
+| Table          | Purpose                                 | Important fields                           |
+| -------------- | --------------------------------------- | ------------------------------------------ |
+| `users`        | Administrator and analyst identities    | email, password hash, role, active state   |
+| `projects`     | Carbon or biodiversity initiatives      | owner, type, status, dates                 |
+| `sites`        | Geographic areas belonging to a project | PostGIS polygon, calculated area, status   |
+| `site_metrics` | Time-series measurements for analytics  | metric type, value, unit, observation time |
+
+All primary keys are UUIDs. Deleting a user removes owned projects; deleting a project removes its sites and measurements. Site boundaries use WGS84 (`SRID 4326`) and a GiST spatial index.
+
+### Authentication example
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","full_name":"Admin User","password":"secure-password-123"}'
+
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'username=admin@example.com&password=secure-password-123'
+```
 
 ## Planned milestones
 
 1. Foundation and developer experience (complete)
-2. Database schema and JWT registration/login
+2. Database schema and JWT registration/login (complete)
 3. Project management dashboard and CRUD
 4. Mapbox polygon drawing and PostGIS storage
 5. Site analytics with Chart.js
