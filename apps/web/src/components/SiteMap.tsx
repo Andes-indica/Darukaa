@@ -122,17 +122,22 @@ export function SiteMap({
 
   useEffect(() => {
     if (!MAPBOX_TOKEN || !containerRef.current) return;
+    const container = containerRef.current;
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
-      container: containerRef.current,
+      container,
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [78.9629, 20.5937],
       zoom: 4,
     });
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(container);
+    const initialResizeFrame = window.requestAnimationFrame(() => map.resize());
 
     map.on("load", () => {
+      map.resize();
       map.addSource(SOURCE_ID, {
         type: "geojson",
         data: siteCollection(sitesRef.current),
@@ -218,10 +223,13 @@ export function SiteMap({
 
       updateSiteLayer(map, sitesRef.current);
       setMapReady(true);
+      window.requestAnimationFrame(() => map.resize());
     });
 
     mapRef.current = map;
     return () => {
+      window.cancelAnimationFrame(initialResizeFrame);
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
     };
