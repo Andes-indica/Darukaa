@@ -39,13 +39,13 @@ If Render changes either service name because the desired name is unavailable, u
 
 ## What happens during deployment
 
-The API build installs the locked Python dependencies. Before each new API version goes live, Render runs:
+The API build installs the locked Python dependencies. When the API instance starts, Render runs:
 
 ```bash
-uv run alembic -c alembic.ini upgrade head
+uv run alembic -c alembic.ini upgrade head && exec uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Migration `0001` enables PostGIS and pgcrypto before creating application tables and indexes. The API then starts on Render's assigned port and exposes `/api/v1/health` as its health-check path.
+Migration `0001` enables PostGIS and pgcrypto before creating application tables and indexes. Alembic upgrades are idempotent, so an already-current database continues immediately to Uvicorn. This startup sequence is used because Render's separate pre-deploy command is unavailable on free web services. The API then starts on Render's assigned port and exposes `/api/v1/health` as its health-check path.
 
 The static-site build installs the locked npm dependencies, type-checks the React application, and publishes `apps/web/dist` to Render's CDN.
 
@@ -85,7 +85,7 @@ Then open the frontend URL and complete this smoke test:
 
 ### The API health endpoint works but registration fails
 
-Open the API environment settings and confirm `DATABASE_URL` is linked to `darukaa-earth-database`. Check the API deploy log to confirm the Alembic pre-deploy command completed.
+Open the API environment settings and confirm `DATABASE_URL` is linked to `darukaa-earth-database`. Check the API deploy log to confirm the Alembic migration completed before Uvicorn started.
 
 ### The browser reports a CORS error
 

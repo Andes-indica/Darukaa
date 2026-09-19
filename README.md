@@ -187,7 +187,7 @@ The GitHub Actions workflow runs for pull requests and every push to `main`:
 6. Run unit, ownership, validation, and real PostGIS integration tests.
 7. Type-check and build the production React bundle.
 
-Third-party actions are pinned to full commit SHAs. Render services use `autoDeployTrigger: checksPass`, so a new version deploys only after the GitHub quality workflow succeeds. The API pre-deploy command applies database migrations before the new service version starts.
+Third-party actions are pinned to full commit SHAs. Render services use `autoDeployTrigger: checksPass`, so a new version deploys only after the GitHub quality workflow succeeds. The API start command applies idempotent Alembic migrations before starting Uvicorn, which supports Render's free tier without requiring its paid pre-deploy command feature.
 
 ## Production deployment
 
