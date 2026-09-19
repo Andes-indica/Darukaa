@@ -54,8 +54,8 @@ Both services use `autoDeployTrigger: checksPass`. A push to `main` deploys only
 Replace the example API URL below with the deployed API origin:
 
 ```bash
-curl https://darukaa-earth-api.onrender.com/api/v1/health
-curl https://darukaa-earth-api.onrender.com/api/v1/health/database
+curl https://darukaa-earth-api-i790.onrender.com/api/v1/health
+curl https://darukaa-earth-api-i790.onrender.com/api/v1/health/database
 ```
 
 Expected results:

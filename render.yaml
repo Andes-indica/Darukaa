@@ -34,7 +34,7 @@ services:
         - package-lock.json
     envVars:
       - key: VITE_API_URL
-        value: https://darukaa-earth-api.onrender.com/api/v1
+        value: https://darukaa-earth-api-i790.onrender.com/api/v1
       - key: VITE_MAPBOX_TOKEN
         sync: false
     routes:
