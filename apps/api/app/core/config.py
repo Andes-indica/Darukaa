@@ -1,7 +1,9 @@
 from functools import lru_cache
+from json import loads
+from typing import Annotated
 
 from pydantic import field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "development-only-secret-change-before-deploying"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
@@ -26,7 +28,16 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
+            normalized_value = value.strip()
+            if normalized_value.startswith("["):
+                decoded_value = loads(normalized_value)
+                if not isinstance(decoded_value, list):
+                    raise ValueError("CORS_ORIGINS JSON value must be a list")
+                value = decoded_value
+            else:
+                value = normalized_value.split(",")
+        if isinstance(value, list):
+            return [origin.strip() for origin in value if origin.strip()]
         return value
 
     @field_validator("database_url", mode="before")

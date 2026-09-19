@@ -4,6 +4,28 @@ from pydantic import ValidationError
 from app.core.config import Settings
 
 
+@pytest.mark.parametrize(
+    ("raw_origins", "expected_origins"),
+    [
+        ("http://localhost:5173", ["http://localhost:5173"]),
+        (
+            "http://localhost:5173, https://darukaa.example.com",
+            ["http://localhost:5173", "https://darukaa.example.com"],
+        ),
+        (
+            '["http://localhost:5173", "https://darukaa.example.com"]',
+            ["http://localhost:5173", "https://darukaa.example.com"],
+        ),
+    ],
+)
+def test_cors_origins_accept_common_environment_formats(
+    raw_origins: str, expected_origins: list[str]
+) -> None:
+    settings = Settings(cors_origins=raw_origins, _env_file=None)
+
+    assert settings.cors_origins == expected_origins
+
+
 def test_render_postgres_url_uses_asyncpg_driver() -> None:
     settings = Settings(
         database_url="postgresql://user:password@database.internal:5432/darukaa",
