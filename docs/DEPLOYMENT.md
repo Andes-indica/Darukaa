@@ -23,19 +23,17 @@ The repository is public, so reviewer invitations are not required by the hackat
    - `darukaa-earth-web`
    - `darukaa-earth-api`
    - `darukaa-earth-database`
-6. Provide the prompted environment values:
+6. Provide the prompted environment value:
 
-| Service | Variable            | Value                                                                                         |
-| ------- | ------------------- | --------------------------------------------------------------------------------------------- |
-| API     | `CORS_ORIGINS`      | The exact public frontend origin, such as `https://darukaa-earth-web.onrender.com`            |
-| Web     | `VITE_API_URL`      | The public API origin with `/api/v1`, such as `https://darukaa-earth-api.onrender.com/api/v1` |
-| Web     | `VITE_MAPBOX_TOKEN` | Your public Mapbox token beginning with `pk.`                                                 |
+| Service | Variable            | Value                                         |
+| ------- | ------------------- | --------------------------------------------- |
+| Web     | `VITE_MAPBOX_TOKEN` | Your public Mapbox token beginning with `pk.` |
 
 7. Apply the Blueprint and wait for all three resources to finish provisioning.
 
 Render generates `JWT_SECRET`. Do not replace it with the development value from `.env.example`.
 
-If Render changes either service name because the desired name is unavailable, update `CORS_ORIGINS` and `VITE_API_URL` with the actual URLs and manually redeploy both services.
+The Blueprint configures `CORS_ORIGINS` and `VITE_API_URL` with the deployed service URLs. If Render changes either service name because the desired name is unavailable, update those variables with the actual URLs and manually redeploy both services.
 
 ## What happens during deployment
 

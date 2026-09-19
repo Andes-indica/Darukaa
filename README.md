@@ -199,7 +199,7 @@ The root [`render.yaml`](render.yaml) provisions:
 - Generated production JWT credentials
 - Automatic deployment after passing GitHub checks
 
-Follow [the deployment and verification guide](docs/DEPLOYMENT.md). The first Blueprint setup requires three environment values: the public frontend origin, the public API URL, and a Mapbox token.
+Follow [the deployment and verification guide](docs/DEPLOYMENT.md). The Blueprint contains the public service URLs; the first setup prompts only for a Mapbox token.
 
 ## API summary
 

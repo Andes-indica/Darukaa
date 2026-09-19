@@ -19,7 +19,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false
+        value: https://darukaa-earth-web.onrender.com
 
   - type: web
     name: darukaa-earth-web
@@ -34,7 +34,7 @@ services:
         - package-lock.json
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://darukaa-earth-api.onrender.com/api/v1
       - key: VITE_MAPBOX_TOKEN
         sync: false
     routes:
