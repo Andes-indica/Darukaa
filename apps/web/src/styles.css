@@ -290,6 +290,7 @@ h2 {
   border-radius: 50%;
   background: #167452;
   box-shadow: 0 8px 18px #184a3890;
+  cursor: pointer;
 }
 .site-marker i {
   color: white;
@@ -362,6 +363,14 @@ h2 {
   min-width: 10px;
   border-radius: 5px 5px 2px 2px;
   background: linear-gradient(#88d794, #2c8a65);
+}
+.chart span b {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  color: #35594e;
+  font-size: 10px;
+  transform: translateX(-50%);
 }
 .chart span i {
   position: absolute;

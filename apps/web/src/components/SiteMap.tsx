@@ -62,7 +62,10 @@ function draftCollection(
     features.unshift({
       type: "Feature",
       properties: { kind: "line" },
-      geometry: { type: "LineString", coordinates: points } satisfies LineString,
+      geometry: {
+        type: "LineString",
+        coordinates: points,
+      } satisfies LineString,
     });
   }
 
@@ -75,8 +78,7 @@ function setDraftData(
   boundary: PolygonGeometry | null,
 ) {
   const source = map.getSource(DRAFT_SOURCE_ID) as
-    | mapboxgl.GeoJSONSource
-    | undefined;
+    mapboxgl.GeoJSONSource | undefined;
   source?.setData(draftCollection(points, boundary));
 }
 
@@ -170,7 +172,11 @@ export function SiteMap({
         id: `${DRAFT_SOURCE_ID}-line`,
         type: "line",
         source: DRAFT_SOURCE_ID,
-        filter: ["in", ["geometry-type"], ["literal", ["LineString", "Polygon"]]],
+        filter: [
+          "in",
+          ["geometry-type"],
+          ["literal", ["LineString", "Polygon"]],
+        ],
         paint: { "line-color": "#ffffff", "line-width": 7 },
       });
       map.addLayer({
@@ -249,10 +255,7 @@ export function SiteMap({
       event.clientX - bounds.left,
       event.clientY - bounds.top,
     ]);
-    pointsRef.current = [
-      ...pointsRef.current,
-      [location.lng, location.lat],
-    ];
+    pointsRef.current = [...pointsRef.current, [location.lng, location.lat]];
     setPointCount(pointsRef.current.length);
     setDraftData(map, pointsRef.current, null);
   }

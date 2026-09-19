@@ -17,8 +17,12 @@
     "format": "npm-run-all format:web format:api",
     "format:web": "prettier --write .",
     "format:api": "uv run --project apps/api ruff format apps/api",
-    "test": "npm-run-all test:api build:web",
+    "format:check": "npm-run-all format:check:web format:check:api",
+    "format:check:web": "prettier --check .",
+    "format:check:api": "uv run --project apps/api ruff format --check apps/api",
+    "test": "npm-run-all test:api test:web build:web",
     "test:api": "uv run --project apps/api pytest -c apps/api/pyproject.toml",
+    "test:web": "npm --workspace @darukaa/web run test",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -38,8 +42,5 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "uv": "^1.4.0"
   }
 }

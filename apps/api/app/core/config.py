@@ -1,8 +1,7 @@
 from functools import lru_cache
-from typing import Annotated
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic import field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -15,7 +14,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "development-only-secret-change-before-deploying"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
@@ -29,6 +28,24 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def use_async_postgres_driver(cls, value: str) -> str:
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+asyncpg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.app_env.lower() in {"production", "prod"} and (
+            self.jwt_secret == "development-only-secret-change-before-deploying"
+            or len(self.jwt_secret) < 32
+        ):
+            raise ValueError("Production requires a unique JWT_SECRET of at least 32 characters")
+        return self
 
 
 @lru_cache

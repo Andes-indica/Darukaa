@@ -44,6 +44,10 @@ const typeLabels: Record<ProjectType, string> = {
   mixed: "Mixed impact",
 };
 
+function csvCell(value: string | number) {
+  return `"${String(value).replaceAll('"', '""')}"`;
+}
+
 function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem(TOKEN_KEY) ?? "",
@@ -144,6 +148,32 @@ function App() {
     ];
   }, [error, projects]);
 
+  const projectActivity = useMemo(() => {
+    const activity = [
+      {
+        label: "Draft",
+        count: projects.items.filter((project) => project.status === "draft")
+          .length,
+      },
+      {
+        label: "Active",
+        count: projects.items.filter((project) => project.status === "active")
+          .length,
+      },
+      {
+        label: "Completed",
+        count: projects.items.filter(
+          (project) => project.status === "completed",
+        ).length,
+      },
+    ];
+    const largest = Math.max(...activity.map((item) => item.count), 1);
+    return activity.map((item) => ({
+      ...item,
+      height: item.count ? Math.max((item.count / largest) * 100, 18) : 8,
+    }));
+  }, [projects.items]);
+
   function handleAuthenticated(response: AuthResponse) {
     localStorage.setItem(TOKEN_KEY, response.access_token);
     setToken(response.access_token);
@@ -155,6 +185,36 @@ function App() {
     setToken("");
     setUser(null);
     setProjects(emptyProjectPage);
+  }
+
+  function exportProjectReport() {
+    const header = [
+      "Project name",
+      "Type",
+      "Status",
+      "Sites",
+      "Start date",
+      "End date",
+    ];
+    const rows = projects.items.map((project) => [
+      project.name,
+      typeLabels[project.project_type],
+      project.status,
+      project.site_count,
+      project.start_date ?? "",
+      project.end_date ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map(csvCell).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `darukaa-projects-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function openCreateDialog() {
@@ -237,7 +297,12 @@ function App() {
             <h1>Environmental impact, mapped.</h1>
           </div>
           <div className="topbar-actions">
-            <button className="secondary-button" type="button">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={exportProjectReport}
+              disabled={projects.items.length === 0}
+            >
               Export report
             </button>
             <button
@@ -280,6 +345,8 @@ function App() {
                 className="icon-button"
                 type="button"
                 aria-label="Expand map"
+                disabled={projects.items.length === 0}
+                onClick={() => setSiteProject(projects.items[0] ?? null)}
               >
                 ↗
               </button>
@@ -291,12 +358,15 @@ function App() {
             >
               <div className="map-grid" />
               {projects.items.slice(0, 4).map((project, index) => (
-                <span
+                <button
+                  type="button"
                   className={`site-marker marker-${index + 1}`}
                   key={project.id}
+                  onClick={() => setSiteProject(project)}
+                  aria-label={`Open map workspace for ${project.name}`}
                 >
                   <i>{project.site_count}</i>
-                </span>
+                </button>
               ))}
               <div className="map-legend">
                 <b>{metrics[2]?.value}</b> mapped sites
@@ -312,19 +382,17 @@ function App() {
               </div>
               <span className="trend">Live data</span>
             </div>
-            <div className="chart" aria-label="Project activity illustration">
-              {[42, 55, 48, 68, 72, 86, 92].map((height, index) => (
-                <span
-                  key={index}
-                  style={{ height: `${projects.total ? height : 10}%` }}
-                >
-                  <i>{2020 + index}</i>
+            <div className="chart" aria-label="Project status distribution">
+              {projectActivity.map((item) => (
+                <span key={item.label} style={{ height: `${item.height}%` }}>
+                  <b>{item.count}</b>
+                  <i>{item.label}</i>
                 </span>
               ))}
             </div>
             <p>
-              Site analytics will populate this chart after geographic
-              boundaries and measurements are added.
+              Status distribution for the projects currently visible in your
+              portfolio.
             </p>
           </article>
         </section>
