@@ -4,6 +4,10 @@ Darukaa.Earth is a full-stack geospatial analytics platform for managing carbon 
 
 Repository: [github.com/Andes-indica/Darukaa](https://github.com/Andes-indica/Darukaa)
 
+Live application: [darukaa-earth-web.onrender.com](https://darukaa-earth-web.onrender.com)
+
+API documentation: [darukaa-earth-api-i790.onrender.com/docs](https://darukaa-earth-api-i790.onrender.com/docs)
+
 ## Product capabilities
 
 - JWT registration, login, and protected sessions
@@ -159,6 +163,18 @@ Open `http://localhost:5173`. FastAPI documentation is available at `http://loca
 
 No shared credentials are required because registration is enabled.
 
+## Demonstration data
+
+The repository includes an idempotent API-based seed command. It creates three projects, four geospatial sites, and time-series carbon, biodiversity, and vegetation observations. All generated observations are labeled as demonstration data and do not represent field measurements.
+
+Run it against the public deployment or a local API:
+
+```bash
+npm run seed:demo
+```
+
+The command prompts for the account email and password without writing either value to disk. It registers the account when needed, otherwise signs in, and skips projects, sites, and observations that already exist. To target another API, set `DARUKAA_API_URL` or pass `--api-url`.
+
 ## Quality checks
 
 ```bash
@@ -241,4 +257,4 @@ Follow [the deployment and verification guide](docs/DEPLOYMENT.md). The Blueprin
 3. Project dashboard and protected CRUD - complete
 4. Mapbox polygon workflow and PostGIS storage - complete
 5. Site performance analytics with Chart.js - complete
-6. Integration testing, deployment automation, and submission documentation - in progress until the first public deployment is verified
+6. Integration testing, deployment automation, and submission documentation - complete

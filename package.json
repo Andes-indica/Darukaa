@@ -23,6 +23,7 @@
     "test": "npm-run-all test:api test:web build:web",
     "test:api": "uv run --project apps/api pytest -c apps/api/pyproject.toml",
     "test:web": "npm --workspace @darukaa/web run test",
+    "seed:demo": "uv run --project apps/api python apps/api/scripts/seed_demo.py",
     "prepare": "husky"
   },
   "lint-staged": {

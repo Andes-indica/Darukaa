@@ -32,6 +32,7 @@ services:
         - apps/web/**
         - package.json
         - package-lock.json
+        - render.yaml
     envVars:
       - key: VITE_API_URL
         value: https://darukaa-earth-api-i790.onrender.com/api/v1
